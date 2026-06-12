@@ -75,6 +75,7 @@ prismVersion = "2.0.0"
 qrcodescannerVersion = "0.1.2.4"
 reviewKtxVersion = "2.0.2"
 roomVersion = "2.8.4"
+pagingVersion = "3.5.0"
 screengrabVersion = "2.1.1"
 sectionedRecyclerviewVersion = "0.6.1"
 shotVersion = "6.1.0"
@@ -198,6 +199,8 @@ media3-ui = { module = "androidx.media3:media3-ui", version.ref = "media3" }
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomVersion" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomVersion" }
 room-testing = { module = "androidx.room:room-testing", version.ref = "roomVersion" }
+room-paging = { module = "androidx.room:room-paging", version.ref = "roomVersion" }
+paging-runtime = { module = "androidx.paging:paging-runtime", version.ref = "pagingVersion" }
 
 # Espresso
 espresso-accessibility = { module = "androidx.test.espresso:espresso-accessibility", version.ref = "espressoVersion" }

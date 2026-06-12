@@ -9,10 +9,44 @@ package com.nextcloud.client.database.entity
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.owncloud.android.db.ProviderMeta.ProviderTableMeta
 
-@Entity(tableName = ProviderTableMeta.FILE_TABLE_NAME)
+@Entity(
+    tableName = ProviderTableMeta.FILE_TABLE_NAME,
+    indices = [
+        Index(
+            value = [
+                ProviderTableMeta.FILE_ACCOUNT_OWNER,
+                ProviderTableMeta.FILE_PATH
+            ],
+            name = "index_filelist_file_owner_path"
+        ),
+        Index(
+            value = [
+                ProviderTableMeta.FILE_ACCOUNT_OWNER,
+                ProviderTableMeta.FILE_PARENT
+            ],
+            name = "index_filelist_file_owner_parent"
+        ),
+        Index(
+            value = [
+                ProviderTableMeta.FILE_ACCOUNT_OWNER,
+                ProviderTableMeta.FILE_PARENT,
+                ProviderTableMeta.FILE_NAME
+            ],
+            name = "index_filelist_file_owner_parent_filename"
+        ),
+        Index(
+            value = [
+                ProviderTableMeta.FILE_ACCOUNT_OWNER,
+                ProviderTableMeta.FILE_REMOTE_ID
+            ],
+            name = "index_filelist_file_owner_remote_id"
+        )
+    ]
+)
 data class FileEntity(
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = ProviderTableMeta._ID)

@@ -13,6 +13,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.nextcloud.client.database.NextcloudDatabase
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -71,6 +72,30 @@ class MigrationTest {
             cursor.moveToFirst()
             val localId = cursor.getInt(cursor.getColumnIndex("local_id"))
             assertEquals("Not null localId is not the same after migration", notNullLocalIdValue, localId)
+        }
+
+        db.close()
+    }
+
+    @Test
+    @Throws(IOException::class)
+    fun migrate100to101() {
+        var db = helper.createDatabase(TEST_DB, 100)
+        db.close()
+
+        db = helper.runMigrationsAndValidate(TEST_DB, 101, true, MIGRATION_100_101)
+
+        db.query("PRAGMA index_list(filelist)").use { cursor ->
+            val indexNameColumn = cursor.getColumnIndex("name")
+            val indexNames = mutableSetOf<String>()
+            while (cursor.moveToNext()) {
+                indexNames.add(cursor.getString(indexNameColumn))
+            }
+
+            assertTrue(indexNames.contains("index_filelist_file_owner_path"))
+            assertTrue(indexNames.contains("index_filelist_file_owner_parent"))
+            assertTrue(indexNames.contains("index_filelist_file_owner_parent_filename"))
+            assertTrue(indexNames.contains("index_filelist_file_owner_remote_id"))
         }
 
         db.close()

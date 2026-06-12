@@ -8,9 +8,14 @@
 package com.nextcloud.client.database.dao
 
 import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
+import androidx.paging.PagingSource
 import com.nextcloud.client.database.entity.FileEntity
+import com.nextcloud.client.database.model.FolderChildState
 import com.owncloud.android.db.ProviderMeta.ProviderTableMeta
 import com.owncloud.android.utils.MimeType
 
@@ -19,6 +24,14 @@ import com.owncloud.android.utils.MimeType
 interface FileDao {
     @Update
     fun update(entity: FileEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertOrReplace(entities: Collection<FileEntity>)
+
+    @Transaction
+    fun upsertBatch(entities: Collection<FileEntity>) {
+        insertOrReplace(entities)
+    }
 
     @Query("SELECT * FROM filelist WHERE _id = :id LIMIT 1")
     fun getFileById(id: Long): FileEntity?
@@ -46,6 +59,90 @@ interface FileDao {
 
     @Query("SELECT * FROM filelist WHERE parent = :parentId ORDER BY ${ProviderTableMeta.FILE_DEFAULT_SORT_ORDER}")
     suspend fun getFolderContentSuspended(parentId: Long): List<FileEntity>
+
+    @Query(
+        """
+        SELECT *
+        FROM filelist
+        WHERE parent = :parentId
+          AND file_owner = :fileOwner
+        ORDER BY ${ProviderTableMeta.FILE_DEFAULT_SORT_ORDER}
+        """
+    )
+    fun getFolderContentPagingSource(parentId: Long, fileOwner: String): PagingSource<Int, FileEntity>
+
+    @Query(
+        """
+        SELECT *
+        FROM filelist
+        WHERE parent = :parentId
+          AND file_owner = :fileOwner
+        ORDER BY ${ProviderTableMeta.FILE_DEFAULT_SORT_ORDER}
+        LIMIT :limit OFFSET :offset
+        """
+    )
+    fun getFolderContentPage(parentId: Long, fileOwner: String, limit: Int, offset: Int): List<FileEntity>
+
+    @Query(
+        """
+        SELECT *
+        FROM filelist
+        WHERE path IN (:paths)
+          AND file_owner = :fileOwner
+        """
+    )
+    fun getFilesByEncryptedRemotePaths(paths: Collection<String>, fileOwner: String): List<FileEntity>
+
+    @Query(
+        """
+        SELECT
+            _id,
+            path,
+            path_decrypted,
+            encrypted_filename,
+            etag,
+            etag_on_server,
+            media_path,
+            content_type,
+            modified,
+            favorite,
+            share_by_link,
+            shared_via_users,
+            metadata_live_photo,
+            e2e_counter,
+            local_id
+        FROM filelist
+        WHERE path IN (:paths)
+          AND file_owner = :fileOwner
+        """
+    )
+    fun getFolderChildStatesByEncryptedRemotePaths(paths: Collection<String>, fileOwner: String): List<FolderChildState>
+
+    @Query(
+        """
+        SELECT *
+        FROM filelist
+        WHERE parent = :parentId
+          AND file_owner = :fileOwner
+          AND path NOT IN (:remotePaths)
+        LIMIT :limit
+        """
+    )
+    fun getFolderChildrenNotInRemotePaths(
+        parentId: Long,
+        fileOwner: String,
+        remotePaths: Collection<String>,
+        limit: Int
+    ): List<FileEntity>
+
+    @Query(
+        """
+        DELETE FROM filelist
+        WHERE _id IN (:ids)
+          AND file_owner = :fileOwner
+        """
+    )
+    fun deleteFilesByIds(fileOwner: String, ids: Collection<Long>): Int
 
     @Query(
         "SELECT * FROM filelist WHERE modified >= :startDate" +
